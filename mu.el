@@ -198,11 +198,11 @@ the cdr holds the connection defails from `mu-worlds'."
     (message "Opening connection...")
     (let ((buf (make-comint (mu-world-name world) (mu-world-network world))))
       (pop-to-buffer buf)
-      (when (mu-world-password world)
-	(mu-login world))
       (mu-connection-mode (mu-world-name world))
       (mu-input-buffer buf)
-      (message "Opening connection...done"))))
+      (message "Opening connection...done")
+      (when (mu-world-password world)
+	(mu-login world)))))
 
 (defun mu-reconnect (world)
   "Renew the connection in a mu output buffer."
@@ -214,11 +214,14 @@ the cdr holds the connection defails from `mu-worlds'."
 (defun mu-login (world)
   "Login for WORLD in the current buffer.
 This just sends the login string and hopes for the best."
-  (process-send-string
-   (current-buffer)
-   (format "\nconnect %s %s\n"
-	   (mu-world-character world)
-	   (mu-world-password world))))
+  (let ((character (mu-world-character world))
+        (password (mu-world-password world)))
+    (message (format "character: %s\npassword: %s\nconnection: %s" character password mu-connection))
+    (run-at-time 1 nil 'process-send-string mu-connection character)
+    (run-at-time 1 nil 'process-send-string mu-connection "\n")
+    (run-at-time 1 nil 'process-send-string mu-connection password)
+    (run-at-time 1 nil 'process-send-string mu-connection "\n")))
+
 
 ;; Creating mu mode buffers
 
