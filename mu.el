@@ -164,7 +164,7 @@ This function will run `mu-connection-mode-hook' at the end.
   (setq mode-name "MU* Conn")
   (use-local-map mu-connection-mode-map)
   (set (make-local-variable 'mu-name) name)
-  (setq fill-column 80)
+  ;; (setq fill-column 80)
   (add-to-list 'comint-output-filter-functions 'mu-fill)
   ;; User stuff.
   (run-hooks 'mu-connection-mode-hook))
@@ -276,12 +276,14 @@ This fills each line between `comint-last-output-start' and the buffer's
   (save-excursion
     (let ((pos (point-marker)))
       (goto-char comint-last-output-start)
-      (while (< (point) pos)
-	(let (start)
-	  (beginning-of-line)
-	  (setq start (point))
-	  (forward-line)
-	  (fill-region start (point) nil t))))))
+      (insert "\n")
+      ;; (while (< (point) pos)
+      ;;   (let (start)
+      ;;     (beginning-of-line)
+      ;;     (setq start (point))
+      ;;     (forward-line)
+      ;;     (fill-region start (point) nil t)))
+      )))
 
 (provide 'mu)
 
