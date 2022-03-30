@@ -74,7 +74,8 @@ passwords!  If you don't want that, specify nil as your password."
 		  (string :tag "Host")
 		  (integer :tag "Port")
 		  (string :tag "Char" :value "guest")
-		  (string :tag "Pwd" :value "guest")))
+		  (string :tag "Pwd" :value "guest")
+                  (string :tag "Mthd" :value "separate")))
   :group 'mu)
 
 ;; Accessing the fields
@@ -94,6 +95,10 @@ passwords!  If you don't want that, specify nil as your password."
 (defsubst mu-world-password (world)
   "Return the password for WORLD as a string."
   (aref world 4))
+
+(defsubst mu-world-method (world)
+  "Return the method for WORLD as a string."
+  (aref world 5))
 
 ;;; Modes
 
@@ -215,12 +220,14 @@ the cdr holds the connection defails from `mu-worlds'."
   "Login for WORLD in the current buffer.
 This just sends the login string and hopes for the best."
   (let ((character (mu-world-character world))
-        (password (mu-world-password world)))
-    (message (format "character: %s\npassword: %s\nconnection: %s" character password mu-connection))
-    (run-at-time 1 nil 'process-send-string mu-connection character)
-    (run-at-time 1 nil 'process-send-string mu-connection "\n")
-    (run-at-time 1 nil 'process-send-string mu-connection password)
-    (run-at-time 1 nil 'process-send-string mu-connection "\n")))
+        (password (mu-world-password world))
+        (method (mu-world-method world)))
+    (message (format "character: %s\npassword: %s\nmethod: %s" character password method))
+    (if (not method)
+        (progn
+          (run-at-time 1 nil 'process-send-string mu-connection (concat character "\n"))
+          (run-at-time 2 nil 'process-send-string mu-connection (concat password "\n")))
+      (run-at-time 2 nil 'process-send-string mu-connection (format "%s %s %s\n" method character password)))))
 
 
 ;; Creating mu mode buffers
