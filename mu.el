@@ -219,7 +219,9 @@ the cdr holds the connection defails from `mu-worlds'."
 
 (defun mu-login (world)
   "Login for WORLD in the current buffer.
-This just sends the login string and hopes for the best."
+If nil, will send the username and password and hope for the
+best. If non-nil, will send a string containing the string
+provided for `method', the username, and the password"
   (let ((character (mu-world-character world))
         (password (mu-world-password world))
         (method (mu-world-method world)))
