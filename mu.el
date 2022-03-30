@@ -69,12 +69,12 @@ connection, CHARACTER and PASSWORD are used to connect automatically.
 Note that this will be saved in your `custom-file' -- including your
 passwords!  If you don't want that, specify nil as your password."
   :type '(repeat
-	  (vector :tag "World"
-		  (string :tag "Name")
-		  (string :tag "Host")
-		  (integer :tag "Port")
-		  (string :tag "Char" :value "guest")
-		  (string :tag "Pwd" :value "guest")
+          (vector :tag "World"
+                  (string :tag "Name")
+                  (string :tag "Host")
+                  (integer :tag "Port")
+                  (string :tag "Char" :value "guest")
+                  (string :tag "Pwd" :value "guest")
                   (string :tag "Mthd" :value "separate")))
   :group 'mu)
 
@@ -105,10 +105,10 @@ passwords!  If you don't want that, specify nil as your password."
 (defvar mu-input-mode-map
   (let ((map (make-sparse-keymap)))
     (if (functionp 'set-keymap-parent)
-	(set-keymap-parent map text-mode-map); Emacs
+        (set-keymap-parent map text-mode-map); Emacs
       (set-keymap-parents map (list text-mode-map))); XEmacs
     (if (functionp 'set-keymap-name)
-	(set-keymap-name map 'mu-input-mode-map)); XEmacs
+        (set-keymap-name map 'mu-input-mode-map)); XEmacs
     (define-key map (kbd "<RET>") 'mu-send)
     map)
   "Mode map used for `mu-input-mode'.
@@ -142,10 +142,10 @@ This function will run `mu-input-mode-hook' at the end.
 (defvar mu-connection-mode-map
   (let ((map (make-sparse-keymap)))
     (if (functionp 'set-keymap-parent)
-	(set-keymap-parent map comint-mode-map); Emacs
+        (set-keymap-parent map comint-mode-map); Emacs
       (set-keymap-parents map (list comint-mode-map))); XEmacs
     (if (functionp 'set-keymap-name)
-	(set-keymap-name map 'mu-connection-mode-map)); XEmacs
+        (set-keymap-name map 'mu-connection-mode-map)); XEmacs
     ;; (define-key map (kbd "C-j") 'mu-accumulate-and-indent)
     map)
   "Mode map used for `mu-connection-mode'.
@@ -186,13 +186,13 @@ This function will run `mu-connection-mode-hook' at the end.
 The return value is a cons cell, the car is the name of the connection,
 the cdr holds the connection defails from `mu-worlds'."
   (let ((world-completions
-	 (mapcar (lambda (w)
-		   (cons (mu-world-name w) w))
-		 mu-worlds)))
+         (mapcar (lambda (w)
+                   (cons (mu-world-name w) w))
+                 mu-worlds)))
     (if world-completions
-	(cdr (assoc (completing-read "World: " world-completions
-				     nil t nil mu-world-history)
-		    world-completions))
+        (cdr (assoc (completing-read "World: " world-completions
+                                     nil t nil mu-world-history)
+                    world-completions))
       (customize-option 'mu-worlds)
       nil)))
 
@@ -203,18 +203,19 @@ the cdr holds the connection defails from `mu-worlds'."
     (message "Opening connection...")
     (let ((buf (make-comint (mu-world-name world) (mu-world-network world))))
       (pop-to-buffer buf)
+      (visual-line-mode 1)
       (mu-connection-mode (mu-world-name world))
       (mu-input-buffer buf)
       (message "Opening connection...done")
       (when (mu-world-password world)
-	(mu-login world)))))
+        (mu-login world)))))
 
 (defun mu-reconnect (world)
   "Renew the connection in a mu output buffer."
   (interactive (list (mu-get-world)))
   (open-network-stream (mu-world-name world) (current-buffer)
-		       (car (mu-world-network world))
-		       (cdr (mu-world-network world))))
+                       (car (mu-world-network world))
+                       (cdr (mu-world-network world))))
 
 (defun mu-login (world)
   "Login for WORLD in the current buffer.
@@ -222,7 +223,6 @@ This just sends the login string and hopes for the best."
   (let ((character (mu-world-character world))
         (password (mu-world-password world))
         (method (mu-world-method world)))
-    (message (format "character: %s\npassword: %s\nmethod: %s" character password method))
     (if (not method)
         (progn
           (run-at-time 1 nil 'process-send-string mu-connection (concat character "\n"))
@@ -238,7 +238,7 @@ The current buffer must be a mu connection."
   (interactive (list (mu-get-connection)))
   (set-buffer buf)
   (pop-to-buffer (get-buffer-create
-		     (concat "*Input for " mu-name "*")))
+                  (concat "*Input for " mu-name "*")))
   (mu-input-mode buf))
 
 (defvar mu-connection-history nil
@@ -249,16 +249,16 @@ The current buffer must be a mu connection."
 Only buffers with `mu-name' set are eligible.
 Note that `default-value' of `mu-name' must be nil for this to work."
   (let ((buffers (buffer-list))
-	buf conns)
+        buf conns)
     (while buffers
       (setq buf (car buffers)
-	    buffers (cdr buffers))
+            buffers (cdr buffers))
       (set-buffer buf)
       (when mu-name
-	(setq conns (cons (cons mu-name buf) conns))))
+        (setq conns (cons (cons mu-name buf) conns))))
     (cdr (assoc (completing-read "Connection: " conns 
-				 nil t nil mu-connection-history)
-		conns))))
+                                 nil t nil mu-connection-history)
+                conns))))
 
 ;; Sending stuff
 
@@ -287,12 +287,6 @@ This fills each line between `comint-last-output-start' and the buffer's
     (let ((pos (point-marker)))
       (goto-char comint-last-output-start)
       (insert "\n")
-      ;; (while (< (point) pos)
-      ;;   (let (start)
-      ;;     (beginning-of-line)
-      ;;     (setq start (point))
-      ;;     (forward-line)
-      ;;     (fill-region start (point) nil t)))
       )))
 
 (provide 'mu)
