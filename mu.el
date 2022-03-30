@@ -1,15 +1,15 @@
 ;;; mu.el --- play on a MUSH or MUD within Emacs
 
-;; Copyright (C) 2001, 2004  Alex Schroeder <alex@gnu.org>
+;; Copyright (C) 2022 Alex Schroeder <alex@gnu.org> && Pierce Wang <pierce.g.wang@gmail.com>
 
 ;; Emacs Lisp Archive Entry
 ;; Filename: mu.el
-;; Version: 1.0.1
+;; Version: 1.1
 ;; Keywords: comm, games
 ;; Author: Alex Schroeder <alex@gnu.org>
-;; Maintainer: Alex Schroeder <alex@gnu.org>
+;; Maintainer: Pierce Wang <pierce.g.wang@gmail.com>
 ;; Description: Play in a MUSH or MUD within Emacs.
-;; Compatibility: Emacs20
+;; Compatibility: Emacs27
 
 ;; This file is not part of GNU Emacs.
 
