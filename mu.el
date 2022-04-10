@@ -1,4 +1,4 @@
-;;; mu.el --- play on a MUSH or MUD within Emacs
+;;; mu.el --- Play on a MUSH or MUD
 
 ;; Copyright (C) 2022 Alex Schroeder <alex@gnu.org> && Pierce Wang <pierce.g.wang@gmail.com>
 
@@ -6,6 +6,7 @@
 ;; Filename: mu.el
 ;; Version: 1.1
 ;; Keywords: comm, games
+;; Homepage: https://github.com/piercegwang/mu.el
 ;; Author: Alex Schroeder <alex@gnu.org>
 ;; Maintainer: Pierce Wang <pierce.g.wang@gmail.com>
 ;; Description: Play in a MUSH or MUD within Emacs.
@@ -48,6 +49,7 @@
 ;;; Code:
 
 (require 'comint)
+(require 'cl-lib)
 (load "ansi-color" t)
 
 (defgroup mu nil
@@ -74,8 +76,7 @@ passwords!  If you don't want that, specify nil as your password."
                   (string :tag "Host")
                   (integer :tag "Port")
                   (string :tag "Char" :value "guest")
-                  (string :tag "Pwd" :value "guest")
-                  (string :tag "Mthd" :value "separate")))
+                  (repeat string :tag "Logins")))
   :group 'mu)
 
 ;; Accessing the fields
@@ -88,17 +89,9 @@ passwords!  If you don't want that, specify nil as your password."
   "Return the network details for WORLD as a cons cell (HOST . PORT)."
   (cons (aref world 1) (aref world 2)))
 
-(defsubst mu-world-character (world)
-  "Return the character for WORLD as a string."
-  (aref world 3))
-
-(defsubst mu-world-password (world)
-  "Return the password for WORLD as a string."
+(defsubst mu-world-login-strings (world)
+  "The list of login commands to send on start."
   (aref world 4))
-
-(defsubst mu-world-method (world)
-  "Return the method for WORLD as a string."
-  (aref world 5))
 
 ;;; Modes
 
@@ -134,8 +127,12 @@ This function will run `mu-input-mode-hook' at the end.
   (setq major-mode 'mu-input-mode)
   (setq mode-name "MU* Input")
   (use-local-map mu-input-mode-map)
+  (defvar mu-world)
+  (message "%s" (buffer-local-value 'mu-world conn))
   ;; Make each buffer in mu-input-mode remember the current connection.
-  (set (make-local-variable 'mu-connection) conn)
+  (let ((world (buffer-local-value 'mu-world conn)))
+    (set (make-local-variable 'mu-connection) conn)
+    (set (make-local-variable 'mu-world) world))
   ;; Run hook
   (run-hooks 'mu-input-mode-hook))
 
@@ -154,6 +151,9 @@ Based on `comint-mode-map'.")
 (defvar mu-name nil
   "Local variable for the connection name.")
 
+(defvar mu-world nil
+  "Local variable for world and its data.")
+
 (defun mu-connection-mode (name)
   "Major mode for a mu connection.
 
@@ -169,12 +169,30 @@ This function will run `mu-connection-mode-hook' at the end.
   (setq mode-name "MU* Conn")
   (use-local-map mu-connection-mode-map)
   (set (make-local-variable 'mu-name) name)
-  ;; (setq fill-column 80)
-  (add-to-list 'comint-output-filter-functions 'mu-fill)
+  (add-to-list 'comint-output-filter-functions 'mu-insert-newline)
+  (delete 'comint-watch-for-password-prompt comint-output-filter-functions)
+  (add-to-list 'comint-input-filter-functions 'mu-debugger)
   ;; User stuff.
   (run-hooks 'mu-connection-mode-hook))
 
 (put 'mu-connection-mode 'mode-class 'special)
+
+(defun mu-login (world)
+  "Login for WORLD in the current buffer. If non-nil, sends the
+login strings one by one after a \": \" is detected."
+  (let* ((logins (mu-world-login-strings world))
+         (delay 2)
+         (i 0)
+         (stringcount (length logins)))
+    (message "world: %s" world)
+    (message "logins: %s" logins)
+    (unless (eq logins nil)
+      (while (< i stringcount)
+        (run-at-time delay nil 'process-send-string mu-connection (format "%s\n" (nth i logins)))
+        (message "string: %s\ndelay: %s\ni: %s" (nth i logins) delay i)
+        (setq delay (+ delay 3))
+        (setq i (+ i 1))))
+    t))
 
 ;;; Opening connections
 
@@ -184,7 +202,7 @@ This function will run `mu-connection-mode-hook' at the end.
 (defun mu-get-world ()
   "Let the user choose a world from `mu-worlds'.  
 The return value is a cons cell, the car is the name of the connection,
-the cdr holds the connection defails from `mu-worlds'."
+the cdr holds the connection details from `mu-worlds'."
   (let ((world-completions
          (mapcar (lambda (w)
                    (cons (mu-world-name w) w))
@@ -203,12 +221,10 @@ the cdr holds the connection defails from `mu-worlds'."
     (message "Opening connection...")
     (let ((buf (make-comint (mu-world-name world) (mu-world-network world))))
       (pop-to-buffer buf)
-      (visual-line-mode 1)
       (mu-connection-mode (mu-world-name world))
+      (set (make-local-variable 'mu-world) world)
       (mu-input-buffer buf)
-      (message "Opening connection...done")
-      (when (mu-world-password world)
-        (mu-login world)))))
+      (message "Opening connection...done"))))
 
 (defun mu-reconnect (world)
   "Renew the connection in a mu output buffer."
@@ -216,20 +232,6 @@ the cdr holds the connection defails from `mu-worlds'."
   (open-network-stream (mu-world-name world) (current-buffer)
                        (car (mu-world-network world))
                        (cdr (mu-world-network world))))
-
-(defun mu-login (world)
-  "Login for WORLD in the current buffer.
-If nil, will send the username and password and hope for the
-best. If non-nil, will send a string containing the string
-provided for `method', the username, and the password"
-  (let ((character (mu-world-character world))
-        (password (mu-world-password world))
-        (method (mu-world-method world)))
-    (if (not method)
-        (progn
-          (run-at-time 1 nil 'process-send-string mu-connection (concat character "\n"))
-          (run-at-time 2 nil 'process-send-string mu-connection (concat password "\n")))
-      (run-at-time 2 nil 'process-send-string mu-connection (format "%s %s %s\n" method character password)))))
 
 
 ;; Creating mu mode buffers
@@ -273,23 +275,41 @@ The current connection is stored in `mu-connection'."
   (let ((pos (point)))
     (save-excursion
       (beginning-of-line)
-      (process-send-string
-       mu-connection
-       (concat (buffer-substring-no-properties (point) pos) "\n"))))
+      (let ((str (buffer-substring-no-properties (point) pos)))
+        (message "command filter result: %s" (mu-command-filter str))
+        (when (not (mu-command-filter str))
+          (message "continuing to send command: %s" str)
+          (process-send-string
+           mu-connection
+           (concat str "\n"))))))
   (when (looking-at "\\'")
     (newline)))
 
+;; Command filter
+
+(defun mu-command-filter (str)
+  "Filter string being sent before it gets to process."
+  (when (string= (substring str 0 1) ".")
+    (let ((command (substring str 1)))
+      (message "message command filter: %s" command)
+      (cond ((string= command "login") (mu-login mu-world))
+            ((string= command "quit") (kill-buffer mu-connection))
+            (t nil)))))
+
 ;; Receiving stuff
 
-(defun mu-fill (str)
-  "Fill text received from the host.
-This fills each line between `comint-last-output-start' and the buffer's
-`process-mark'."
+(defun mu-insert-newline (str)
+  "Inserts a newline character between process outputs. Sometimes
+MU*s don't do this properly."
   (save-excursion
     (let ((pos (point-marker)))
       (goto-char comint-last-output-start)
-      (insert "\n")
-      )))
+      (insert "\n"))))
+
+(defun mu-debugger (str)
+  "Print string"
+  (message "input to process: %s" str)
+  str)
 
 (provide 'mu)
 
