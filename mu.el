@@ -270,18 +270,18 @@ Note that `default-value' of `mu-name' must be nil for this to work."
   "Send current line to the current connection.
 The current connection is stored in `mu-connection'."
   (interactive)
-  (unless mu-connection
-    (error "No connection"))
   (let ((pos (point)))
     (save-excursion
       (beginning-of-line)
       (let ((str (buffer-substring-no-properties (point) pos)))
-        (message "command filter result: %s" (mu-command-filter str))
-        (when (not (mu-command-filter str))
-          (message "continuing to send command: %s" str)
-          (process-send-string
-           mu-connection
-           (concat str "\n"))))))
+        (if (not (mu-command-filter str))
+            (progn
+              (unless mu-connection
+                (error "No connection"))
+              (process-send-string
+               mu-connection
+               (concat str "\n")))
+          (message "Command called: str")))))
   (when (looking-at "\\'")
     (newline)))
 
@@ -289,12 +289,12 @@ The current connection is stored in `mu-connection'."
 
 (defun mu-command-filter (str)
   "Filter string being sent before it gets to process."
-  (when (string= (substring str 0 1) ".")
+  (when (and (> (length str) 1) (string= (substring str 0 1) "."))
     (let ((command (substring str 1)))
       (message "message command filter: %s" command)
       (cond ((string= command "login") (mu-login mu-world))
-            ((string= command "quit") (kill-buffer mu-connection))
-            (t nil)))))
+            ((string= command "quit") (kill-buffer mu-connection)))
+      t)))
 
 ;; Receiving stuff
 
