@@ -9,6 +9,7 @@
 *** 2022-03-29: Revamped login--unsure if it generalizes
 
 - Also removed filling of comint output since it messes with some MUDs
+
 ** Introduction
 
 Mu uses Comint Mode to create a connection to a MUD server. This has the added benefit of providing you with an entire communication infrastructure. Minibuffer history, moving between prompts, highlighting of SGR (escape sequences controlling colors on a tty) using Ansi Color, etc.
@@ -65,3 +66,7 @@ systems. There is probably some smart way of adding this to
            'iso-latin-1-unix))
 #+end_src
 
+** TODOs
+
+- [ ] Logging/note taking system
+- [ ] Interface for timers, scripting actions
