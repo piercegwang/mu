@@ -55,7 +55,8 @@
 
 (defgroup mu nil
   "A MUSH or MUD client."
-  :group 'processes)
+  :group 'processes
+  :prefix "mu-")
 
 (defcustom mu-worlds nil
   "List of worlds you play in.
@@ -172,7 +173,7 @@ This function will run `mu-connection-mode-hook' at the end.
   (set (make-local-variable 'mu-name) name)
   (add-to-list 'comint-output-filter-functions 'mu-insert-newline)
   (delete 'comint-watch-for-password-prompt comint-output-filter-functions)
-  (add-to-list 'comint-input-filter-functions 'mu-debugger)
+  ;; (add-to-list 'comint-input-filter-functions 'mu-debugger)
   ;; User stuff.
   (run-hooks 'mu-connection-mode-hook))
 
@@ -307,10 +308,10 @@ MU*s don't do this properly."
       (goto-char comint-last-output-start)
       (insert "\n"))))
 
-(defun mu-debugger (str)
-  "Print string"
-  (message "input to process: %s" str)
-  str)
+;; (defun mu-debugger (str)
+;;   "Print string"
+;;   (message "input to process: %s" str)
+;;   str)
 
 (provide 'mu)
 
