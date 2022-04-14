@@ -5,6 +5,7 @@
 ;; Emacs Lisp Archive Entry
 ;; Filename: mu.el
 ;; Version: 1.1
+;; Package-Requires: ((emacs "24.3"))
 ;; Keywords: comm, games
 ;; Homepage: https://github.com/piercegwang/mu.el
 ;; Author: Alex Schroeder <alex@gnu.org>
