@@ -2,6 +2,10 @@
 
 ** Recent Changes
 
+*** 2022-04-12: Renovated login--added custom command filter
+
+- ~.login~ will run ~mu-login~ which sends commands separated by delay
+
 *** 2022-03-30: Renovating README
 
 - Added more descriptions for setup and reformatted into an ~org~ file.
@@ -25,20 +29,19 @@ Before you can open new connections, you must customize 'mu-worlds'. As soon as 
 ** Setup
 In order to use ~mu~, you have to define ~mu-worlds~ with a list of vectors containing world information.
 
-I'm very new to MUDs, so I'm not very familiar with the login patterns, but I've made an attempt to improve the ~mu-login~ function in order to make it possible for the user to specify the login method. Thus, there is a 6th element of the vector which determines the method of the auto-login process. Below is an example of a ~mu-worlds~ definition.
+I'm very new to MUDs, so I'm not very familiar with the login patterns, but I've made an attempt to improve the ~mu-login~ function in order to make it possible for the user to specify the login method. Thus, there is a fifth element of the vector which determines a few commands to send when ~.login~ is sent in the input buffer. Below is an example of a ~mu-worlds~ definition.
 
 #+begin_src emacs-lisp
-(setq mu-worlds '(["MUD World name" "address" port_number "nickname" "password" method]
-                  ["EmpireMUD" "empiremud.net" 4000 "some_nickname" "some_password" nil]
-                  ["ConQUEST" "play.conquestmud.ca" 5000 "some_nickname" "some_password" "load"]))
+(setq mu-worlds '(["MUD World name" "address" port_number "nickname" ("command1" "command2")]
+                  ["EmpireMUD" "empiremud.net" 4000 "some_nickname" ("some_nickname" "password")]
+                  ["ConQUEST" "play.conquestmud.ca" 5000 "some_nickname" ("load some_nickname some_password")]))
 #+end_src
 
 - MUD World name :: String, Custom MUD World Name
 - address :: String, address for a MUD
 - port_number :: Integer, port number for a MUD
 - nickname :: String, nickname for login--can be ~nil~ if you don't want to log in automatically
-- password :: String, nickname for login--can be ~nil~ if you don't want to log in automatically
-- method :: String, keyword to send. If non-nil, ~mu~ will send a string containing the method, the nickname, and the password. E.g. "load some_nickname some_password" Otherwise, the nickname and password are sent sequentially one second apart.
+- login commands :: list of Strings, commands to send. If non-nil, ~mu~ will send each command with a delay between them.
 
 
 ** Colors
@@ -68,5 +71,8 @@ systems. There is probably some smart way of adding this to
 
 ** TODOs
 
+- [ ] Mapping
+  - Local file system? to save/encode map into a file
+  - Research how mudlet mapping works
 - [ ] Logging/note taking system
 - [ ] Interface for timers, scripting actions
